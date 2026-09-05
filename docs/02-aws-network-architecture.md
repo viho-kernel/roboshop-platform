@@ -45,3 +45,26 @@ VPN clients
 
 VPN clients
   → Jenkins, Grafana, Kibana, Argo CD, and SSM access
+
+Security Controls
+Control	Responsibility
+Security Groups	Primary stateful firewall between components
+Network ACLs	Stateless subnet guardrails and broad deny boundaries
+IAM Identity Center	Human access through temporary SSO sessions
+IAM roles / IRSA	Workload access to AWS services
+VPN	Network admission before private application access
+VPC endpoints	Private connectivity to AWS APIs where required
+CloudTrail and VPC Flow Logs	Audit and network investigation evidence
+Expected Traffic Paths
+Source	Destination	Allowed path
+Internet	VPN endpoint	VPN protocol only
+VPN client CIDR	Internal ALB	HTTPS
+Internal ALB	EKS application services	Application ports only
+EKS application services	MongoDB / Redis / MySQL / RabbitMQ	Required dependency ports only
+Jenkins / GitOps controller	Private EKS API	HTTPS
+Private workloads	AWS APIs and approved external endpoints	VPC endpoint or NAT egress
+Internet	EKS, databases, Jenkins, Grafana, Kibana	Denied
+Implementation Preconditions
+Confirm the VPC CIDR does not overlap with existing AWS VPCs, VPN client CIDR, or on-premises networks.
+Confirm AWS service quotas before EKS, NAT Gateway, Elastic IP, and load balancer creation.
+Implement Terraform remote state and Terraform security checks before provisioning the VPC.
