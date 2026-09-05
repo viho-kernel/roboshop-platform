@@ -45,6 +45,7 @@ VPN clients
 
 VPN clients
   → Jenkins, Grafana, Kibana, Argo CD, and SSM access
+```
 
 Security Controls
 Control	Responsibility
