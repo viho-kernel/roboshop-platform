@@ -4,10 +4,11 @@
 *.tfstate.*
 crash.log
 crash.*.log
-
+*.tfstate.*
 # Terraform inputs may contain secrets
 *.tfvars
 *.tfvars.json
+*.tfplan
 
 # Override files
 override.tf
