@@ -4,6 +4,7 @@
 *.tfstate.*
 crash.log
 crash.*.log
+tfplan
 *.tfplan
 # Terraform inputs may contain secrets
 *.tfvars
