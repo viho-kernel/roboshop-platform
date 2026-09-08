@@ -24,3 +24,6 @@ override.tf.json
 *.p12
 *.pfx
 vault.pass
+
+# OpenVPN client profiles contain private keys
+*.ovpn
