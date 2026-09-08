@@ -1,0 +1,64 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y openvpn
+
+EASYRSA_VERSION="3.2.1"
+EASYRSA_ARCHIVE="EasyRSA-$${EASYRSA_VERSION}.tgz"
+
+install -d -m 0700 /etc/openvpn/server
+
+curl --fail --location --retry 3 --output "/tmp/$${EASYRSA_ARCHIVE}" "https://github.com/OpenVPN/easy-rsa/releases/download/v$${EASYRSA_VERSION}/$${EASYRSA_ARCHIVE}"
+
+tar -xzf "/tmp/$${EASYRSA_ARCHIVE}" -C /etc/openvpn/server
+mv "/etc/openvpn/server/EasyRSA-$${EASYRSA_VERSION}" /etc/openvpn/server/easy-rsa
+rm -f "/tmp/$${EASYRSA_ARCHIVE}"
+
+cd /etc/openvpn/server/easy-rsa
+
+EASYRSA_BATCH=1 ./easyrsa init-pki
+EASYRSA_BATCH=1 ./easyrsa build-ca nopass
+EASYRSA_BATCH=1 ./easyrsa gen-req server nopass
+EASYRSA_BATCH=1 ./easyrsa sign-req server server
+EASYRSA_BATCH=1 ./easyrsa gen-dh
+
+cp pki/ca.crt /etc/openvpn/server/ca.crt
+cp pki/issued/server.crt /etc/openvpn/server/server.crt
+cp pki/private/server.key /etc/openvpn/server/server.key
+cp pki/dh.pem /etc/openvpn/server/dh.pem
+
+openvpn --genkey secret /etc/openvpn/server/tls-crypt.key
+
+chmod 600 /etc/openvpn/server/server.key
+chmod 600 /etc/openvpn/server/tls-crypt.key
+
+cat > /etc/openvpn/server/server.conf <<EOF
+port 1194
+proto udp
+dev tun
+
+ca ca.crt
+cert server.crt
+key server.key
+dh dh.pem
+tls-crypt tls-crypt.key
+
+topology subnet
+server ${vpn_client_network} ${vpn_client_netmask}
+push "route ${vpc_network} ${vpc_netmask}"
+
+keepalive 10 120
+persist-key
+persist-tun
+
+status /var/log/openvpn-status.log
+verb 3
+explicit-exit-notify 1
+EOF
+
+cat > /etc/sysctl.d/99-openvpn-forwarding.conf <<EOF
+net.ipv4.ip_forward = 1
+EOF
+
+sysctl --system
+systemctl enable --now openvpn-server@server
