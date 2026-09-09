@@ -118,15 +118,16 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private_egress" {
   vpc_id = aws_vpc.this.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.this.id
-  }
-
   tags = {
     Name = "${var.project_name}-${var.environment}-private-egress-rt"
     Tier = "private-egress"
   }
+}
+
+resource "aws_route" "private_nat" {
+  route_table_id         = aws_route_table.private_egress.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.this.id
 }
 
 resource "aws_route_table_association" "private_app" {
