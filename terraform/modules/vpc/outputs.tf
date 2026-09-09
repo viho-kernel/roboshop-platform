@@ -37,4 +37,3 @@ output "private_egress_route_table_id" {
   description = "ID of the route table shared by private app and ops subnets."
   value       = aws_route_table.private_egress.id
 }
-
